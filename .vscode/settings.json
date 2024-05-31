@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^apt-cache policy nvidia-driver-595-open \\|\\| true && apt-cache policy nvidia-driver-580 \\|\\| true && dpkg -l \\| grep -Ei '\\^ii\\\\s\\+nvidia\\|\\^ii\\\\s\\+libnvidia' \\| sed -n '1,120p' && grep -R \"nomodeset\" /etc/default/grub /etc/default/grub\\.d 2>/dev/null \\|\\| true$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
