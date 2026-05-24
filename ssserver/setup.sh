@@ -1,4 +1,5 @@
 set -e
+sudo apt update
 apt install python2 -y
 apt install python3 -y
 
