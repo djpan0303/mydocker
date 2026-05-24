@@ -19,11 +19,36 @@ function start() {
     tag_file=$(dirname $0)/$image_id/$TAG_ID_FILE
     tag_id=$(cat $tag_file)
     image_tag=$image_id:$tag_id
-    docker pull "$REPO_REGISTRY/$image_tag"
-    docker tag "$REPO_REGISTRY/$image_tag" $image_tag
-    if [ $image_id = "ubuntu_dev" ];then
-      docker run -dt --restart=always --name $image_id $image_tag
+
+    # if pull failed
+    pull_result=$(timeout 60s docker pull "$REPO_REGISTRY/$image_tag" 2>&1)
+    if [ $? -ne 0 ]; then
+      echo "pull image $image_tag failed, use local image"
     fi
+    
+    docker tag "$REPO_REGISTRY/$image_tag" $image_tag
+    
+    # place your config file under /data/conf
+    host_dir=$CONFIG_DIR
+    os_type=$(uname)
+    if [ $os_type == "Darwin" ];then
+      host_dir=$HOME/$CONFIG_DIR
+    fi
+
+    # copy config file under ssclient/app/conf to host_dir if not exist
+    if [ ! -d $host_dir ];then
+        mkdir -p $host_dir
+        cp -r $(dirname $0)/conf/* $host_dir
+    fi
+
+    sudo mkdir -p $host_dir && sudo chmod 777 $host_dir
+    echo "start new container..."
+    docker run -dt --restart=always \
+        -p 8118:8118 \
+        --name $image_id \
+        -v $host_dir/ssr.json:$CONFIG_DIR/ssr.json \
+        -v $host_dir/privoxy_config:/etc/privoxy/config \
+        $image_tag
 
     if [ $image_id = "ssclient" ];then
       # place your config file under /data/conf
@@ -59,6 +84,7 @@ function test() {
 while [ "$#" -gt 0 ]
 do
   case "$1" in
+    # start or restart container
     --start | --restart)
       stop $2
       start $2

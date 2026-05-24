@@ -22,7 +22,7 @@ function build() {
   tag_file=$build_script_dir/$image_id/$TAG_ID_FILE
 
   echo "building image"
-  cd $image_id && docker build $build_arg -t $cur_image_tag .
+  cd $image_id && docker build $build_arg --network host -t $cur_image_tag .
   if [ $? -ne 0 ];then
     echo "build image fail"
     exit 1
