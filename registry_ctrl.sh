@@ -28,7 +28,7 @@ function list() {
     image_id=$1
     check_param_empty $image_id "image_id"
     echo "list image $image_id tag list"
-    curl -sSL "http://${REPO_REGISTRY}:5000/v2/$image_id/tags/list" | jq
+    curl -sSL "http://${REPO_REGISTRY}/v2/$image_id/tags/list" | jq
 }
 
 function stop_server() {

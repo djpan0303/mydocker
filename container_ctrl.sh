@@ -16,17 +16,13 @@ function start() {
     check_param_empty $image_id "image_id"
     stop $image_id
 
-    tag_file=$(dirname $0)/$image_id/$TAG_ID_FILE
-    tag_id=$(cat $tag_file)
-    image_tag=$image_id:$tag_id
+    image_tag=$image_id
 
     # if pull failed
     pull_result=$(timeout 60s docker pull "$REPO_REGISTRY/$image_tag" 2>&1)
     if [ $? -ne 0 ]; then
       echo "pull image $image_tag failed, use local image"
     fi
-    
-    docker tag "$REPO_REGISTRY/$image_tag" $image_tag
     
     # place your config file under /data/conf
     host_dir=$CONFIG_DIR
