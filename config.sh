@@ -24,3 +24,14 @@ if ! command -v jq &>/dev/null; then
 		exit 1
 	fi
 fi
+
+# check if /data/conf/privoxy_config exists, if not, copy it from ssclient/conf/privoxy_config
+if [ ! -f "$CONFIG_DIR/privoxy_config" ]; then
+	echo "privoxy_config not found in $CONFIG_DIR, copying from ssclient/conf/privoxy_config..."
+	if [ ! -f "$(dirname $0)/ssclient/conf/privoxy_config" ]; then
+		echo "Source privoxy_config not found in ssclient/conf/privoxy_config. Please make sure it exists."
+		exit 1
+	fi
+	sudo mkdir -p $CONFIG_DIR
+	sudo cp "$(dirname $0)/ssclient/conf/privoxy_config" $CONFIG_DIR/
+fi
