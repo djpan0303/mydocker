@@ -74,3 +74,71 @@ log in local container
 ```
 container_ctrl.sh --login ssclient
 ```
+
+# frps (FRP Server)
+
+## Build & Push
+
+build image and push to registry
+```
+cd frps && docker build -t registry.tinybear.cc:5000/frps:0.58.1 -t registry.tinybear.cc:5000/frps:latest . && docker push registry.tinybear.cc:5000/frps:0.58.1 && docker push registry.tinybear.cc:5000/frps:latest
+```
+
+## Deploy
+
+The image uses `FROM scratch` with busybox, total size ~24MB.
+On startup, the script checks `/data/conf/frps.toml`:
+- If not exists, copies default config
+- If `webServer.password` or `auth.token` is empty, auto-generates 16-char random credentials
+
+first time pull and run
+```
+docker pull registry.tinybear.cc:5000/frps:0.58.1
+docker run -d --name frps --restart=always --network host \
+  -v /data/conf:/data/conf \
+  registry.tinybear.cc:5000/frps:0.58.1
+```
+
+install as systemd service (auto-start on boot)
+```
+cat > /etc/systemd/system/frps.service << 'EOF'
+[Unit]
+Description=frps container service
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+ExecStartPre=-/usr/bin/docker rm -f frps
+ExecStart=/usr/bin/docker run --name frps --restart=always --network host -v /data/conf:/data/conf registry.tinybear.cc:5000/frps:0.58.1
+ExecStop=/usr/bin/docker stop frps
+ExecStopPost=/usr/bin/docker rm -f frps
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable frps.service
+systemctl start frps.service
+```
+
+## Management
+
+```
+systemctl status frps      # check status
+systemctl restart frps     # restart service
+systemctl stop frps        # stop service
+journalctl -u frps -f      # tail logs
+```
+
+```
+docker logs frps           # view container logs
+docker rm -f frps          # force remove container
+```
+
+```
+cat /data/conf/frps.toml   # view config (includes auto-generated credentials)
+```
