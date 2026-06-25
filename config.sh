@@ -4,10 +4,23 @@ TAG_ID_FILE="tag_id.txt"
 REPO_DIR=$HOME/registry
 
 function check_param_empty() {
-    param_value=$1
-    param_name=$2
-    if [ -z "$param_value" ];then
-        echo "$param_name is empty"
-        exit 1
-    fi
+	param_value=$1
+	param_name=$2
+	if [ -z "$param_value" ]; then
+		echo "$param_name is empty"
+		exit 1
+	fi
 }
+
+# install jq
+if ! command -v jq &>/dev/null; then
+	echo "jq could not be found, installing..."
+	if command -v apt-get &>/dev/null; then
+		sudo apt-get update && sudo apt-get install -y jq
+	elif command -v yum &>/dev/null; then
+		sudo yum install -y jq
+	else
+		echo "Neither apt-get nor yum found. Please install jq manually."
+		exit 1
+	fi
+fi
