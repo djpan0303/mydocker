@@ -7,8 +7,12 @@ source $(dirname $0)/config.sh
 function stop() {
 	image_id=$1
 	check_param_empty $image_id "image_id"
-	echo "stop container $image_id"
-	docker rm -f $image_id
+	if docker inspect "$image_id" &>/dev/null; then
+		echo "stop container $image_id"
+		docker rm -f $image_id
+	else
+		echo "container $image_id not running, skip stop"
+	fi
 }
 
 function start() {
