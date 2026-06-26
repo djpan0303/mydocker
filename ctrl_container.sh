@@ -71,6 +71,17 @@ function start() {
 			--name $image_id \
 			-v $host_dir/frps.toml:$CONFIG_DIR/frps.toml \
 			$REPO_REGISTRY/$image_tag
+	elif [ "$image_id" == "ssserver" ]; then
+		# copy ssserver config if not exist
+		if [ ! -f $host_dir/ssserver.json ]; then
+			cp $(dirname $0)/ssserver/conf/config.json $host_dir/ssserver.json
+		fi
+
+		docker run -dt --restart=always \
+			-p 9544:9544 \
+			--name $image_id \
+			-v $host_dir/ssserver.json:$CONFIG_DIR/config.json \
+			$REPO_REGISTRY/$image_tag
 	else
 		# copy ssclient config if not exist
 		if [ ! -f $host_dir/ssr.json ]; then
