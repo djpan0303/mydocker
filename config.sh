@@ -51,6 +51,15 @@ function check_registry_login() {
 
     echo "$REPO_PASS" | docker login "$REPO_REGISTRY" -u "$REPO_USER" --password-stdin
     if [ $? -ne 0 ]; then
+        # Check if registry is HTTP-only and needs insecure-registries config
+        if curl -sSL -o /dev/null -w "%{http_code}" "http://$REPO_REGISTRY/v2/" 2>/dev/null | grep -q '^\(200\|401\)$'; then
+            echo ""
+            echo "[registry] $REPO_REGISTRY is an HTTP registry but not in Docker's insecure-registries."
+            echo "[registry] Run the following to fix:"
+            echo "  sudo jq '.[\"insecure-registries\"] += [\"$REPO_REGISTRY\"]' /etc/docker/daemon.json | sudo tee /etc/docker/daemon.json.tmp && sudo mv /etc/docker/daemon.json.tmp /etc/docker/daemon.json"
+            echo "  sudo systemctl restart docker"
+            echo "  Then re-run your command."
+        fi
         echo "Login to $REPO_REGISTRY failed!"
         exit 1
     fi
