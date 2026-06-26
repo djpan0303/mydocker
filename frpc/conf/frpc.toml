@@ -1,0 +1,8 @@
+serverAddr = "us.tinybear.cc"
+serverPort = 5443
+
+auth.method = "token"
+auth.token = "GOKARYU9K7HrPIxI"
+
+log.to = "console"
+log.level = "info"

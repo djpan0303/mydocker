@@ -23,7 +23,7 @@ function start() {
     if [ $? -ne 0 ]; then
       echo "pull image $image_tag failed, use local image"
     fi
-    
+
     # place your config file under /data/conf
     host_dir=$CONFIG_DIR
     os_type=$(uname)
@@ -31,9 +31,10 @@ function start() {
       host_dir=$HOME/$CONFIG_DIR
     fi
 
-    # copy config file under ssclient/app/conf to host_dir if not exist
+    # ensure config directory exists
     if [ ! -d $host_dir ];then
         sudo mkdir -p $host_dir && sudo chmod 777 $host_dir
+<<<<<<< HEAD
         cp -r $(dirname $0)/ssclient/conf/* $host_dir
     fi
 
@@ -52,6 +53,44 @@ function start() {
     sleep 5
     curl --proxy "http://127.0.0.1:8118" cip.cc
 
+=======
+    fi
+
+    echo "start new container..."
+    if [ "$image_id" == "frpc" ]; then
+        # copy frpc config if not exist
+        if [ ! -f $host_dir/frpc.toml ];then
+            cp $(dirname $0)/frpc/conf/frpc.toml $host_dir/frpc.toml
+        fi
+
+        docker run -dt --restart=always \
+            --network host \
+            --name $image_id \
+            -v $host_dir/frpc.toml:$CONFIG_DIR/frpc.toml \
+            -v $host_dir/frpc.toml:/etc/frp/frpc.toml \
+            $REPO_REGISTRY/$image_tag
+    else
+        # copy ssclient config if not exist
+        if [ ! -f $host_dir/ssr.json ];then
+            cp -r $(dirname $0)/ssclient/conf/* $host_dir
+        fi
+
+        docker run -dt --restart=always \
+            -p 8118:8118 \
+            --name $image_id \
+            -v $host_dir/ssr.json:$CONFIG_DIR/ssr.json \
+            -v $host_dir/privoxy_config:/etc/privoxy/config \
+            $REPO_REGISTRY/$image_tag
+
+        docker ps -a --no-trunc | grep "$image_id"
+
+        # validate
+        echo "where am i?waiting for $image_id bring up"
+        sleep 5
+        curl --proxy "http://127.0.0.1:8118" cip.cc
+    fi
+
+>>>>>>> acdabb5 (frpc debug)
 }
 
 function login() {
