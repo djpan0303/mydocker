@@ -34,26 +34,6 @@ function start() {
     # ensure config directory exists
     if [ ! -d $host_dir ];then
         sudo mkdir -p $host_dir && sudo chmod 777 $host_dir
-<<<<<<< HEAD
-        cp -r $(dirname $0)/ssclient/conf/* $host_dir
-    fi
-
-    echo "start new container..."
-    docker run -dt --restart=always \
-        -p 8118:8118 \
-        --name $image_id \
-        -v $host_dir/ssr.json:$CONFIG_DIR/ssr.json \
-        -v $host_dir/privoxy_config:/etc/privoxy/config \
-        $REPO_REGISTRY/$image_tag
-    
-    docker ps -a --no-trunc | grep "$image_id"
-
-    # validate
-    echo "where am i?waiting for $image_id bring up"
-    sleep 5
-    curl --proxy "http://127.0.0.1:8118" cip.cc
-
-=======
     fi
 
     echo "start new container..."
@@ -90,7 +70,6 @@ function start() {
         curl --proxy "http://127.0.0.1:8118" cip.cc
     fi
 
->>>>>>> acdabb5 (frpc debug)
 }
 
 function login() {
