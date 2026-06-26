@@ -17,6 +17,11 @@ function start() {
     stop $image_id
 
     image_tag=$image_id
+    script_dir=$(dirname $0)
+    if [ -f "$script_dir/$image_id/$TAG_ID_FILE" ]; then
+        tag_id=$(cat "$script_dir/$image_id/$TAG_ID_FILE")
+        image_tag="$image_id:$tag_id"
+    fi
 
     check_registry_login
 
