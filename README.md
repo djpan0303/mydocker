@@ -142,3 +142,66 @@ docker rm -f frps          # force remove container
 ```
 cat /data/conf/frps.toml   # view config (includes auto-generated credentials)
 ```
+
+# frpc (FRP Client)
+
+## Build & Push
+
+```
+cd frpc && docker build -t registry.tinybear.cc:5000/frpc:0.58.1 -t registry.tinybear.cc:5000/frpc:latest . && docker push registry.tinybear.cc:5000/frpc:0.58.1 && docker push registry.tinybear.cc:5000/frpc:latest
+```
+
+## Deploy
+
+On startup, the script checks `/data/conf/frpc.toml` and copies the default config if not exists. Edit the config to set `serverAddr`, `auth.token`, and `proxies` before use.
+
+```
+docker pull registry.tinybear.cc:5000/frpc:0.58.1
+docker run -d --name frpc --restart=always --network host \
+  -v /data/conf:/data/conf \
+  registry.tinybear.cc:5000/frpc:0.58.1
+```
+
+systemd service (auto-start on boot)
+```
+cat > /etc/systemd/system/frpc.service << 'EOF'
+[Unit]
+Description=frpc container service
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+ExecStartPre=-/usr/bin/docker rm -f frpc
+ExecStart=/usr/bin/docker run --name frpc --restart=always --network host -v /data/conf:/data/conf registry.tinybear.cc:5000/frpc:0.58.1
+ExecStop=/usr/bin/docker stop frpc
+ExecStopPost=/usr/bin/docker rm -f frpc
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable frpc.service
+systemctl start frpc.service
+```
+
+## Management
+
+```
+systemctl status frpc       # check status
+systemctl restart frpc      # restart service
+systemctl stop frpc         # stop service
+journalctl -u frpc -f       # tail logs
+```
+
+```
+docker logs frpc            # view container logs
+docker rm -f frpc           # force remove container
+```
+
+```
+cat /data/conf/frpc.toml    # view/edit config (serverAddr, auth.token, proxies)
+```
