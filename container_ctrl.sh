@@ -49,6 +49,17 @@ function start() {
             -v $host_dir/frpc.toml:$CONFIG_DIR/frpc.toml \
             -v $host_dir/frpc.toml:/etc/frp/frpc.toml \
             $REPO_REGISTRY/$image_tag
+    elif [ "$image_id" == "frps" ]; then
+        # copy frps config if not exist
+        if [ ! -f $host_dir/frps.toml ];then
+            cp $(dirname $0)/frps/frps.toml $host_dir/frps.toml
+        fi
+
+        docker run -dt --restart=always \
+            --network host \
+            --name $image_id \
+            -v $host_dir/frps.toml:$CONFIG_DIR/frps.toml \
+            $REPO_REGISTRY/$image_tag
     else
         # copy ssclient config if not exist
         if [ ! -f $host_dir/ssr.json ];then
