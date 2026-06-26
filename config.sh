@@ -1,4 +1,4 @@
-REPO_REGISTRY=registry.tinybear.cc:5000
+REPO_REGISTRY=us.tinybear.cc:5000
 CONFIG_DIR="/data/conf"
 TAG_ID_FILE="tag_id.txt"
 REPO_DIR=$HOME/registry
