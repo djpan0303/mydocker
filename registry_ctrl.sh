@@ -9,13 +9,14 @@ source ./config.sh
 function remove() {
     image_tag=$1
     check_param_empty $image_tag "image_tag"
+    check_registry_creds
 
     echo "remove $image_tag from registry"
 
     image_id=$(echo ${image_tag} | cut -d ':' -f 1)
     tag_id=$(echo ${image_tag} | cut -d ':' -f 2)
-    curl -v -sSL -X DELETE "http://${REPO_REGISTRY}/v2/${image_id}/manifests/$(
-        curl -sSL -I \
+    curl -v -sSL -u ${REPO_USER}:${REPO_PASS} -X DELETE "http://${REPO_REGISTRY}/v2/${image_id}/manifests/$(
+        curl -sSL -u ${REPO_USER}:${REPO_PASS} -I \
             -H "Accept: application/vnd.docker.distribution.manifest.v2+json" \
             "http://${REPO_REGISTRY}/v2/${image_id}/manifests/${tag_id}" \
         | awk '$1 == "Docker-Content-Digest:" { print $2 }' \
@@ -27,8 +28,9 @@ function remove() {
 function list() {
     image_id=$1
     check_param_empty $image_id "image_id"
+    check_registry_creds
     echo "list image $image_id tag list"
-    curl -sSL "http://${REPO_REGISTRY}/v2/$image_id/tags/list" | jq
+    curl -sSL -u ${REPO_USER}:${REPO_PASS} "http://${REPO_REGISTRY}/v2/$image_id/tags/list" | jq
 }
 
 function stop_server() {

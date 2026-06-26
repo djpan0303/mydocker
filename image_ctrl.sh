@@ -52,11 +52,13 @@ function push() {
   image_id=$1
   check_param_empty $image_id "image_id"
 
+  check_registry_login
+
   cur_image_tag=$image_id:$cur_tag_id
   echo "push image $cur_image_tag to registry:$REPO_REGISTRY"
-  docker tag $cur_image_tag  $REPO_REGISTRY/$cur_image_tag 
+  docker tag $cur_image_tag  $REPO_REGISTRY/$cur_image_tag
   # bash registry_ctrl.sh -r $cur_image_tag
-  docker push $REPO_REGISTRY/$cur_image_tag 
+  docker push $REPO_REGISTRY/$cur_image_tag
 }
 
 

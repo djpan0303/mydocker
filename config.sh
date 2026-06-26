@@ -2,6 +2,8 @@ REPO_REGISTRY=us.tinybear.cc:5000
 CONFIG_DIR="/data/conf"
 TAG_ID_FILE="tag_id.txt"
 REPO_DIR=$HOME/registry
+REPO_USER=""
+REPO_PASS=""
 
 function check_param_empty() {
 	param_value=$1
@@ -24,6 +26,51 @@ if ! command -v jq &>/dev/null; then
 		exit 1
 	fi
 fi
+
+function check_registry_login() {
+    # Skip if already logged in via docker
+    if [ -f ~/.docker/config.json ] && grep -q "\"$REPO_REGISTRY\"" ~/.docker/config.json 2>/dev/null; then
+        return 0
+    fi
+
+    echo "[registry] Not logged in to $REPO_REGISTRY"
+    if [ -z "$REPO_USER" ]; then
+        echo -n "Username: "
+        read REPO_USER
+    fi
+    if [ -z "$REPO_PASS" ]; then
+        echo -n "Password: "
+        read -s REPO_PASS
+        echo ""
+    fi
+
+    if [ -z "$REPO_USER" ] || [ -z "$REPO_PASS" ]; then
+        echo "Username or password is empty, abort."
+        exit 1
+    fi
+
+    echo "$REPO_PASS" | docker login "$REPO_REGISTRY" -u "$REPO_USER" --password-stdin
+    if [ $? -ne 0 ]; then
+        echo "Login to $REPO_REGISTRY failed!"
+        exit 1
+    fi
+}
+
+function check_registry_creds() {
+    if [ -z "$REPO_USER" ]; then
+        echo -n "[registry] Username for $REPO_REGISTRY: "
+        read REPO_USER
+    fi
+    if [ -z "$REPO_PASS" ]; then
+        echo -n "[registry] Password: "
+        read -s REPO_PASS
+        echo ""
+    fi
+    if [ -z "$REPO_USER" ] || [ -z "$REPO_PASS" ]; then
+        echo "Username or password is empty, abort."
+        exit 1
+    fi
+}
 
 # check if /data/conf/privoxy_config exists, if not, copy it from ssclient/conf/privoxy_config
 if [ ! -f "$CONFIG_DIR/privoxy_config" ]; then

@@ -18,6 +18,8 @@ function start() {
 
     image_tag=$image_id
 
+    check_registry_login
+
     # if pull failed
     pull_result=$(timeout 60s docker pull "$REPO_REGISTRY/$image_tag" 2>&1)
     if [ $? -ne 0 ]; then
