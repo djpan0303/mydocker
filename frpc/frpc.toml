@@ -1,11 +1,30 @@
-serverAddr = "sz.tinybear.cc"
+# frp 服务端地址（域名或 IP）
+serverAddr = "us.tinybear.cc"
+
+# frp 服务端监听端口，需与 frps.toml 的 bindPort 一致
 serverPort = 5443
-auth.method= "token"
+
+# 客户端唯一标识，用于在 frps Dashboard 中区分不同客户端
+# 每台机器必须设置不同的值，否则 frps 会将后连接的同名客户端视为重连
+user = "your-unique-hostname"
+
+# 认证方式：token 或 oidc
+auth.method = "token"
+# 认证令牌，需与 frps.toml 的 auth.token 一致
 auth.token = "fix me"
 
+# 日志配置
+log.to = "console"    # console 或文件路径
+log.level = "info"    # trace, debug, info, warn, error
+
+# ---- 代理配置 ----
+# 每个 [[proxies]] 块定义一个代理隧道，可定义多个
+# name 必须在同一客户端内唯一
+
+# 示例：暴露本机 SSH
 [[proxies]]
-name = "ssh"
-type = "tcp"
-localIP = "127.0.0.1"
-localPort = 22
-remotePort = 580
+name = "ssh"                # 代理名称，需唯一
+type = "tcp"                # 协议类型：tcp, udp, http, https, stcp, xtcp
+localIP = "127.0.0.1"       # 本地服务 IP
+localPort = 22              # 本地服务端口
+remotePort = 580            # frps 上暴露的端口，请修改为实际使用的端口

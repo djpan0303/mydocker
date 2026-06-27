@@ -1,8 +1,47 @@
+# frp 服务端地址（域名或 IP）
 serverAddr = "us.tinybear.cc"
+
+# frp 服务端监听端口，需与 frps.toml 的 bindPort 一致
 serverPort = 5443
 
-auth.method = "token"
-auth.token = "GOKARYU9K7HrPIxI"
+# 客户端唯一标识，用于在 frps Dashboard 中区分不同客户端
+# 每台机器必须设置不同的值，否则 frps 会将后连接的同名客户端视为重连，Dashboard 中只显示一个
+user = "your-unique-hostname"
 
-log.to = "console"
-log.level = "info"
+# 认证方式：token 或 oidc
+auth.method = "token"
+# 认证令牌，需与 frps.toml 的 auth.token 一致
+auth.token = "fix me"
+
+# 日志配置
+log.to = "console"    # console 或文件路径，如 /var/log/frpc.log
+log.level = "info"    # trace, debug, info, warn, error
+
+# ---- 代理配置 ----
+# 每个 [[proxies]] 块定义一个代理隧道
+# 可定义多个 [[proxies]] 块，每个 name 必须唯一
+
+# 示例：将本机 SSH（22端口）暴露到 frps 的 60222 端口
+# 外部可通过: ssh -oPort=60222 user@<serverAddr> 连接到本机
+[[proxies]]
+name = "ssh"                # 代理名称，需唯一
+type = "tcp"                # 协议类型：tcp, udp, http, https, stcp, xtcp
+localIP = "127.0.0.1"       # 本地服务 IP
+localPort = 22              # 本地服务端口
+remotePort = 60222          # frps 上暴露的端口，外部通过此端口访问
+
+# 更多代理类型示例：
+#
+# [[proxies]]
+# name = "web"
+# type = "http"
+# localIP = "127.0.0.1"
+# localPort = 8080
+# customDomains = ["web.example.com"]   # HTTP 虚拟主机域名
+#
+# [[proxies]]
+# name = "secret-tcp"
+# type = "stcp"              # 加密 TCP，需两端都配置 secretKey
+# localIP = "127.0.0.1"
+# localPort = 3306
+# secretKey = "your-secret-key"
