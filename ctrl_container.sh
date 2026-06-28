@@ -112,7 +112,7 @@ function login() {
 	docker exec -it -u ${USER} $image_id /bin/bash
 }
 
-function test() {
+function test_ssclient() {
 	curl --proxy "http://127.0.0.1:8118" cip.cc
 }
 
@@ -133,7 +133,7 @@ while [ "$#" -gt 0 ]; do
 		exit 0
 		;;
 	--test)
-		test $2
+		test_ssclient
 		exit 0
 		;;
 	esac
