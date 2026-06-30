@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-#  set -x
+# set -x
 
 source $(dirname $0)/config.sh
 
