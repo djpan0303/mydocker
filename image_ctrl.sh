@@ -17,7 +17,7 @@ function build() {
     exit 1
   fi
 
-  build_arg="--build-arg http_proxy=http://172.17.0.3:8118 --build-arg https_proxy=http://172.17.0.3:8118"
+  build_arg="--build-arg http_proxy=http://127.0.0.1:8118 --build-arg https_proxy=http://127.0.0.1:8118"
   cur_image_tag=$image_id:$cur_tag_id
   tag_file=$build_script_dir/$image_id/$TAG_ID_FILE
 

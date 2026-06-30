@@ -82,6 +82,13 @@ function start() {
 			--name $image_id \
 			-v $host_dir/ssserver.json:$CONFIG_DIR/config.json \
 			$REPO_REGISTRY/$image_tag
+	elif [ "$image_id" == "rustdesk" ]; then
+		docker run -dt --restart=always \
+			--network host \
+			--name $image_id \
+			-e RELAY_ADDR=us.tinybear.cc \
+			-v $host_dir:$CONFIG_DIR \
+			$REPO_REGISTRY/$image_tag
 	else
 		# copy ssclient config if not exist
 		if [ ! -f $host_dir/ssr.json ]; then

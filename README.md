@@ -99,43 +99,12 @@ docker run -d --name frps --restart=always --network host \
   registry.tinybear.cc:5000/frps:0.58.1
 ```
 
-install as systemd service (auto-start on boot)
-```
-cat > /etc/systemd/system/frps.service << 'EOF'
-[Unit]
-Description=frps container service
-Requires=docker.service
-After=docker.service
-
-[Service]
-Type=simple
-Restart=always
-RestartSec=10
-ExecStartPre=-/usr/bin/docker rm -f frps
-ExecStart=/usr/bin/docker run --name frps --restart=always --network host -v /data/conf:/data/conf registry.tinybear.cc:5000/frps:0.58.1
-ExecStop=/usr/bin/docker stop frps
-ExecStopPost=/usr/bin/docker rm -f frps
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable frps.service
-systemctl start frps.service
-```
-
 ## Management
 
 ```
-systemctl status frps      # check status
-systemctl restart frps     # restart service
-systemctl stop frps        # stop service
-journalctl -u frps -f      # tail logs
-```
-
-```
 docker logs frps           # view container logs
+docker restart frps        # restart container
+docker stop frps           # stop container
 docker rm -f frps          # force remove container
 ```
 
@@ -162,46 +131,79 @@ docker run -d --name frpc --restart=always --network host \
   registry.tinybear.cc:5000/frpc:0.58.1
 ```
 
-systemd service (auto-start on boot)
-```
-cat > /etc/systemd/system/frpc.service << 'EOF'
-[Unit]
-Description=frpc container service
-Requires=docker.service
-After=docker.service
-
-[Service]
-Type=simple
-Restart=always
-RestartSec=10
-ExecStartPre=-/usr/bin/docker rm -f frpc
-ExecStart=/usr/bin/docker run --name frpc --restart=always --network host -v /data/conf:/data/conf registry.tinybear.cc:5000/frpc:0.58.1
-ExecStop=/usr/bin/docker stop frpc
-ExecStopPost=/usr/bin/docker rm -f frpc
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable frpc.service
-systemctl start frpc.service
-```
-
 ## Management
 
 ```
-systemctl status frpc       # check status
-systemctl restart frpc      # restart service
-systemctl stop frpc         # stop service
-journalctl -u frpc -f       # tail logs
-```
-
-```
 docker logs frpc            # view container logs
+docker restart frpc         # restart container
+docker stop frpc            # stop container
 docker rm -f frpc           # force remove container
 ```
 
 ```
 cat /data/conf/frpc.toml    # view/edit config (serverAddr, auth.token, proxies)
+```
+
+## Rustdesk
+
+自建 RustDesk 远程控制服务，包含 hbbs (ID/Rendezvous 服务器) 和 hbbr (中继/Relay 服务器)。
+
+### Build & Push
+
+```
+./image_ctrl.sh --cbuild rustdesk
+./image_ctrl.sh --push rustdesk
+```
+
+### Deploy
+
+镜像基于 `debian:bookworm-slim`，启动脚本首次运行自动生成 ed25519 密钥对，持久化到 `/data/conf/`。
+
+```
+docker pull us.tinybear.cc:5000/rustdesk:20260630
+docker run -d --name rustdesk --restart=always --network host \
+  -e RELAY_ADDR=us.tinybear.cc \
+  -v /data/conf:/data/conf \
+  us.tinybear.cc:5000/rustdesk:20260630
+```
+
+### 端口
+
+| 端口 | 协议 | 服务 | 用途 |
+|------|------|------|------|
+| 21115 | TCP | hbbs | NAT 类型检测 |
+| 21116 | TCP+UDP | hbbs | ID 注册/心跳 + TCP 打洞 |
+| 21117 | TCP | hbbr | 中继连接 |
+| 21118 | TCP | hbbs | WebSocket (Web 控制台, 仅 WS 协议) |
+| 21119 | TCP | hbbr | WebSocket (Web 控制台, 仅 WS 协议) |
+
+### 客户端配置
+
+RustDesk 客户端 → 设置 → 网络 → ID/中继服务器：
+
+| 字段 | 值 |
+|------|-----|
+| ID 服务器 | `us.tinybear.cc` |
+| 中继服务器 | `us.tinybear.cc` |
+| Key | 查看 `/data/conf/id_ed25519.pub` 或容器启动日志 |
+
+端口使用默认值即可（ID: 21116, 中继: 21117），无需在地址中加端口号。
+
+### 密钥
+
+- 密钥文件保存在 `/data/conf/id_ed25519` 和 `id_ed25519.pub`
+- 首次启动自动生成，后续重启复用
+- 客户端必须填入匹配的公钥才能连接
+
+```
+cat /data/conf/id_ed25519.pub   # 查看公钥
+docker logs rustdesk 2>&1 | grep "Key:"   # 从日志查看
+```
+
+### 管理
+
+```
+docker logs rustdesk            # 查看日志
+docker restart rustdesk         # 重启
+docker exec -it rustdesk bash   # 进入容器
 ```
