@@ -1,6 +1,6 @@
 # Stage 1: download RustDesk server binaries
 FROM debian:bookworm-slim AS builder
-ARG RUSTDESK_VERSION=1.1.14
+ARG RUSTDESK_VERSION=1.1.15
 ARG http_proxy
 ARG https_proxy
 ENV http_proxy=$http_proxy \

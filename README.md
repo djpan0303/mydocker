@@ -207,3 +207,66 @@ docker logs rustdesk            # 查看日志
 docker restart rustdesk         # 重启
 docker exec -it rustdesk bash   # 进入容器
 ```
+
+## RustDesk GFW 隧道脚本
+
+`setup-rustdesk-tunnel.sh` 用于在**国内受 GFW 干扰的电脑**上一键配置 RustDesk 隧道。GFW 会 RST 阻断 TCP 21115/21116 端口，导致 RustDesk 客户端无法连接 ID 服务器。脚本通过 SSH 隧道加密 TCP 流量 + iptables 透明重定向来绕过封锁（UDP 直连不受影响）。
+
+### 原理
+
+```
+RustDesk 客户端 → 199.180.117.155:21116
+       ↓ iptables DNAT 重定向
+127.0.0.1:21116 → SSH 隧道(加密) → VPS:21116 → hbbs
+```
+
+脚本会自动完成：
+1. 配置 SSH 免密登录到 `us.tinybear.cc`
+2. 创建 SSH 隧道 systemd 用户服务（开机自启，端口 21115/21116/21117）
+3. 配置 iptables 透明重定向规则
+4. 持久化 iptables 规则（开机自动恢复）
+5. 更新 RustDesk 客户端配置文件
+
+### 用法
+
+```bash
+bash setup-rustdesk-tunnel.sh <sudo密码>
+```
+
+示例：
+```bash
+bash setup-rustdesk-tunnel.sh mypassword
+```
+
+查看帮助：
+```bash
+bash setup-rustdesk-tunnel.sh --help
+```
+
+不带参数运行会提示正确用法：
+```bash
+bash setup-rustdesk-tunnel.sh
+# 错误: 缺少 sudo 密码参数
+# 用法: bash setup-rustdesk-tunnel.sh <sudo密码>
+```
+
+### 前提
+
+- 目标机器需要安装 `ssh`、`iptables`、`nc`、`systemd`
+- 目标机器需要 sudo 权限（用于配置 iptables 和 systemd linger）
+- 需要能 SSH 连接到 `us.tinybear.cc`（首次运行会自动配置 ssh-copy-id）
+
+### 验证
+
+脚本执行后会自动验证 TCP 21115/21116 和 UDP 21116 的连通性。也可手动验证：
+
+```bash
+# 检查隧道服务状态
+systemctl --user status rustdesk-tunnel.service
+
+# 检查隧道端口监听
+ss -tlnp | grep -E "2111[5-7]"
+
+# 检查 iptables 规则
+sudo iptables -t nat -L OUTPUT -n | grep 2111
+```
