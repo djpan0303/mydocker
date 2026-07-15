@@ -17,6 +17,7 @@ function stop() {
 
 function start() {
 	image_id=$1
+	opt_pull=$2
 	check_param_empty $image_id "image_id"
 	stop $image_id
 
@@ -27,12 +28,11 @@ function start() {
 		image_tag="$image_id:$tag_id"
 	fi
 
-	check_registry_login
-
-	# if pull failed
-	pull_result=$(timeout 60s docker pull "$REPO_REGISTRY/$image_tag" 2>&1)
-	if [ $? -ne 0 ]; then
-		echo "pull image $image_tag failed, use local image"
+	# if specify --pull, pull the image from registry
+	if [ "$opt_pull" == "--pull" ]; then
+		echo "pull image $image_tag from registry"
+		check_registry_login
+		docker pull "$REPO_REGISTRY/$image_tag"
 	fi
 
 	# place your config file under /data/conf
@@ -128,7 +128,7 @@ while [ "$#" -gt 0 ]; do
 	# start or restart container
 	--start | --restart)
 		stop $2
-		start $2
+		start $2 $3
 		exit 0
 		;;
 	--login)
