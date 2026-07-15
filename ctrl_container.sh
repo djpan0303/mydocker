@@ -1,12 +1,23 @@
 #!/bin/bash
 set -e
-# set -x
-
 source $(dirname $0)/config.sh
+
+SSCLIENT_CTRL="$(dirname $0)/ssclient/ctrl_ssclient.sh"
+
+function ensure_ssclient_ctrl() {
+	if [ ! -x "$SSCLIENT_CTRL" ]; then
+		echo "ssclient control script not executable: $SSCLIENT_CTRL"
+		exit 1
+	fi
+}
 
 function stop() {
 	image_id=$1
 	check_param_empty $image_id "image_id"
+	if [ "$image_id" = "ssclient" ]; then
+		ensure_ssclient_ctrl
+		"$SSCLIENT_CTRL" --stop-monitor
+	fi
 	if docker inspect "$image_id" &>/dev/null; then
 		echo "stop container $image_id"
 		docker rm -f $image_id
@@ -90,10 +101,9 @@ function start() {
 			-v $host_dir:$CONFIG_DIR \
 			$REPO_REGISTRY/$image_tag
 	else
+		ensure_ssclient_ctrl
 		# copy ssclient config if not exist
-		if [ ! -f $host_dir/ssr.json ]; then
-			cp -r $(dirname $0)/ssclient/conf/* $host_dir
-		fi
+		"$SSCLIENT_CTRL" --prepare-config "$host_dir"
 
 		docker run -dt --restart=always \
 			-p 8118:8118 \
@@ -105,9 +115,9 @@ function start() {
 		docker ps -a --no-trunc | grep "$image_id"
 
 		# validate
-		echo "where am i?waiting for $image_id bring up"
-		sleep 5
-		curl --proxy "http://127.0.0.1:8118" cip.cc
+		if [ "$image_id" = "ssclient" ]; then
+			"$SSCLIENT_CTRL" --post-start
+		fi
 	fi
 
 }
@@ -120,7 +130,8 @@ function login() {
 }
 
 function test_ssclient() {
-	curl --proxy "http://127.0.0.1:8118" cip.cc
+	ensure_ssclient_ctrl
+	"$SSCLIENT_CTRL" --test
 }
 
 while [ "$#" -gt 0 ]; do

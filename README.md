@@ -60,6 +60,8 @@ image_ctrl.sh --push ssclient
 ```
 
 # Container
+容器总控脚本 `ctrl_container.sh` 只负责服务启停调度；`ssclient` 的业务细节（配置准备、8118 健康检测、监控进程管理）已拆分到 `ssclient/ctrl_ssclient.sh`。
+
 start local container
 ```
 container_ctrl.sh --start ssclient
@@ -74,6 +76,58 @@ log in local container
 ```
 container_ctrl.sh --login ssclient
 ```
+
+test local proxy health
+```
+container_ctrl.sh --test
+```
+
+## Proxy Monitor
+
+`monitor_proxy.sh` 用于定时检测本机 `127.0.0.1:8118` 代理是否还能正常转发流量；如果连续失败达到阈值，会自动重启 `ssclient` 容器，然后再次复检。
+
+推荐方式：将监控脚本作为 `ssclient` 生命周期的一部分，由 `ctrl_container.sh` 自动管理。
+- `./ctrl_container.sh --start ssclient` 时自动后台启动监控
+- `./ctrl_container.sh --stop ssclient` / `--restart ssclient` 时自动停止旧监控
+- 如果 `ssclient` 容器不在运行，`monitor_proxy.sh` 会自动退出
+
+因此不建议把监控脚本单独做“固定开机常驻”，否则可能在容器没启动时空跑。
+
+脚本会先做“直连探测”（默认 `https://www.baidu.com`），用于区分两种情况：
+- 直连失败：说明本机外网本身异常，跳过代理检测与重启（避免无意义重启）
+- 直连成功但代理失败：说明代理链路异常，按阈值执行自动重启
+
+默认检测内容：
+- HTTP 204 探测
+- HTTPS 204 探测
+- 查询代理出口 IP
+
+单次执行：
+```
+./monitor_proxy.sh
+```
+
+连续监控：
+```
+./monitor_proxy.sh --watch --interval 60 --max-failures 3
+```
+
+指定直连探测地址：
+```
+./monitor_proxy.sh --direct-probe-url https://www.baidu.com
+```
+
+如果想交给 cron 每分钟执行一次，可加日志：
+```
+* * * * * /home/ubt/mydocker/monitor_proxy.sh --max-failures 3 --log-file /var/log/proxy-monitor.log
+```
+
+常用参数：
+- `--image ssclient`：指定要重启的容器名
+- `--max-failures 3`：连续失败多少次后重启
+- `--interval 60`：`--watch` 模式下的轮询间隔
+- `--direct-probe-url <url>`：直连探测地址，默认 `https://www.baidu.com`
+- `--log-file <path>`：把日志追加写入文件
 
 # frps (FRP Server)
 
@@ -169,23 +223,23 @@ docker run -d --name rustdesk --restart=always --network host \
 
 ### 端口
 
-| 端口 | 协议 | 服务 | 用途 |
-|------|------|------|------|
-| 21115 | TCP | hbbs | NAT 类型检测 |
-| 21116 | TCP+UDP | hbbs | ID 注册/心跳 + TCP 打洞 |
-| 21117 | TCP | hbbr | 中继连接 |
-| 21118 | TCP | hbbs | WebSocket (Web 控制台, 仅 WS 协议) |
-| 21119 | TCP | hbbr | WebSocket (Web 控制台, 仅 WS 协议) |
+| 端口  | 协议    | 服务 | 用途                               |
+| ----- | ------- | ---- | ---------------------------------- |
+| 21115 | TCP     | hbbs | NAT 类型检测                       |
+| 21116 | TCP+UDP | hbbs | ID 注册/心跳 + TCP 打洞            |
+| 21117 | TCP     | hbbr | 中继连接                           |
+| 21118 | TCP     | hbbs | WebSocket (Web 控制台, 仅 WS 协议) |
+| 21119 | TCP     | hbbr | WebSocket (Web 控制台, 仅 WS 协议) |
 
 ### 客户端配置
 
 RustDesk 客户端 → 设置 → 网络 → ID/中继服务器：
 
-| 字段 | 值 |
-|------|-----|
-| ID 服务器 | `us.tinybear.cc` |
-| 中继服务器 | `us.tinybear.cc` |
-| Key | 查看 `/data/conf/id_ed25519.pub` 或容器启动日志 |
+| 字段       | 值                                              |
+| ---------- | ----------------------------------------------- |
+| ID 服务器  | `us.tinybear.cc`                                |
+| 中继服务器 | `us.tinybear.cc`                                |
+| Key        | 查看 `/data/conf/id_ed25519.pub` 或容器启动日志 |
 
 端口使用默认值即可（ID: 21116, 中继: 21117），无需在地址中加端口号。
 
