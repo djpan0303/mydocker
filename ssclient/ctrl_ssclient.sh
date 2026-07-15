@@ -5,7 +5,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 ROOT_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 
 PROXY_ADDR="http://127.0.0.1:8118"
-MONITOR_SCRIPT="$ROOT_DIR/monitor_proxy.sh"
+MONITOR_SCRIPT="$SCRIPT_DIR/monitor_proxy.sh"
 MONITOR_PID_DIR="/tmp/mydocker_proxy_monitor"
 
 function monitor_pid_file() {

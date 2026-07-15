@@ -84,12 +84,12 @@ container_ctrl.sh --test
 
 ## Proxy Monitor
 
-`monitor_proxy.sh` 用于定时检测本机 `127.0.0.1:8118` 代理是否还能正常转发流量；如果连续失败达到阈值，会自动重启 `ssclient` 容器，然后再次复检。
+`ssclient/monitor_proxy.sh` 用于定时检测本机 `127.0.0.1:8118` 代理是否还能正常转发流量；如果连续失败达到阈值，会自动重启 `ssclient` 容器，然后再次复检。
 
 推荐方式：将监控脚本作为 `ssclient` 生命周期的一部分，由 `ctrl_container.sh` 自动管理。
 - `./ctrl_container.sh --start ssclient` 时自动后台启动监控
 - `./ctrl_container.sh --stop ssclient` / `--restart ssclient` 时自动停止旧监控
-- 如果 `ssclient` 容器不在运行，`monitor_proxy.sh` 会自动退出
+- 如果 `ssclient` 容器不在运行，`ssclient/monitor_proxy.sh` 会自动退出
 
 因此不建议把监控脚本单独做“固定开机常驻”，否则可能在容器没启动时空跑。
 
@@ -104,22 +104,22 @@ container_ctrl.sh --test
 
 单次执行：
 ```
-./monitor_proxy.sh
+./ssclient/monitor_proxy.sh
 ```
 
 连续监控：
 ```
-./monitor_proxy.sh --watch --interval 60 --max-failures 3
+./ssclient/monitor_proxy.sh --watch --interval 60 --max-failures 3
 ```
 
 指定直连探测地址：
 ```
-./monitor_proxy.sh --direct-probe-url https://www.baidu.com
+./ssclient/monitor_proxy.sh --direct-probe-url https://www.baidu.com
 ```
 
 如果想交给 cron 每分钟执行一次，可加日志：
 ```
-* * * * * /home/ubt/mydocker/monitor_proxy.sh --max-failures 3 --log-file /var/log/proxy-monitor.log
+* * * * * /home/ubt/mydocker/ssclient/monitor_proxy.sh --max-failures 3 --log-file /var/log/proxy-monitor.log
 ```
 
 常用参数：

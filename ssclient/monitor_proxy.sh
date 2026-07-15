@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-CONTAINER_CTRL="$SCRIPT_DIR/ctrl_container.sh"
+CONTAINER_CTRL="$SCRIPT_DIR/../ctrl_container.sh"
 
 IMAGE_ID="ssclient"
 MAX_FAILURES=3
@@ -15,7 +15,7 @@ DIRECT_PROBE_URL="https://www.baidu.com"
 usage() {
 	cat <<'EOF'
 Usage:
-  ./monitor_proxy.sh [options]
+	./ssclient/monitor_proxy.sh [options]
 
 Options:
   --image <name>          Container name to monitor, default: ssclient
@@ -27,10 +27,10 @@ Options:
   --help                  Show this help
 
 Examples:
-  ./monitor_proxy.sh
-  ./monitor_proxy.sh --watch --interval 30
-  ./monitor_proxy.sh --image ssclient --max-failures 2
-	./monitor_proxy.sh --direct-probe-url https://www.baidu.com
+	./ssclient/monitor_proxy.sh
+	./ssclient/monitor_proxy.sh --watch --interval 30
+	./ssclient/monitor_proxy.sh --image ssclient --max-failures 2
+	./ssclient/monitor_proxy.sh --direct-probe-url https://www.baidu.com
 EOF
 }
 
