@@ -232,8 +232,8 @@ fi
 if [ "$WATCH_MODE" -eq 1 ]; then
 	log "[monitor] start watch mode: image=$IMAGE_ID interval=${INTERVAL}s max_failures=$MAX_FAILURES direct_probe_url=$DIRECT_PROBE_URL"
 	while true; do
-		run_health_check
-		status=$?
+		status=0
+		run_health_check || status=$?
 		if [ "$status" -ne 0 ]; then
 			if [ "$status" -eq 2 ]; then
 				log "[monitor] stop watch mode because container is not running"
@@ -243,8 +243,8 @@ if [ "$WATCH_MODE" -eq 1 ]; then
 		sleep "$INTERVAL"
 	done
 else
-	run_health_check
-	status=$?
+	status=0
+	run_health_check || status=$?
 	if [ "$status" -eq 2 ]; then
 		exit 0
 	fi

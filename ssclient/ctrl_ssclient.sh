@@ -132,7 +132,10 @@ function test_proxy() {
 function post_start() {
 	echo "where am i?waiting for ssclient bring up"
 	sleep 5
-	curl --proxy "$PROXY_ADDR" cip.cc
+	if ! curl --proxy "$PROXY_ADDR" --silent --show-error --location \
+		--connect-timeout 5 --max-time 15 cip.cc; then
+		echo "[proxy] startup validation failed, monitor will continue handling recovery"
+	fi
 	start_monitor
 }
 
