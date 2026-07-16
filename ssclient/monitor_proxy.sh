@@ -10,6 +10,7 @@ INTERVAL=60
 WATCH_MODE=0
 STATE_DIR="${STATE_DIR:-/tmp/mydocker_proxy_monitor}"
 LOG_FILE=""
+LOG_DIR="/var/log"
 DIRECT_PROBE_URL="https://www.baidu.com"
 
 usage() {
@@ -23,7 +24,7 @@ Options:
   --interval <seconds>    Sleep interval in watch mode, default: 60
 	--direct-probe-url <u>  Direct-connect probe URL, default: https://www.baidu.com
   --watch                 Run continuously
-  --log-file <path>       Append logs to file
+	--log-file <path>       Optional log filename, normalized into /var/log
   --help                  Show this help
 
 Examples:
@@ -36,11 +37,51 @@ EOF
 
 log() {
 	message="$(date '+%F %T') $*"
-	echo "$message"
+	if [ -z "$LOG_FILE" ] || [ -t 1 ]; then
+		echo "$message"
+	fi
 	if [ -n "$LOG_FILE" ]; then
 		mkdir -p "$(dirname "$LOG_FILE")"
 		echo "$message" >>"$LOG_FILE"
 	fi
+}
+
+generate_log_file() {
+	echo "$LOG_DIR/monitory_proxy_$(date '+%F_%H-%M-%S').log"
+}
+
+normalize_log_file() {
+	if [ -z "$LOG_FILE" ]; then
+		generate_log_file
+		return 0
+	fi
+
+	log_base=$(basename "$LOG_FILE")
+	case "$log_base" in
+	monitory_proxy_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].log)
+		echo "$LOG_DIR/$log_base"
+		;;
+	*)
+		generate_log_file
+		;;
+	esac
+}
+
+ensure_log_file_writable() {
+	if touch "$LOG_FILE" 2>/dev/null; then
+		return 0
+	fi
+
+	echo "[monitor] no write permission for $LOG_FILE, trying sudo..." >&2
+	if command -v sudo >/dev/null 2>&1; then
+		sudo touch "$LOG_FILE"
+		sudo chown "$(id -u):$(id -g)" "$LOG_FILE"
+		sudo chmod 664 "$LOG_FILE"
+		return 0
+	fi
+
+	echo "[monitor] cannot write $LOG_FILE and sudo is unavailable" >&2
+	return 1
 }
 
 require_file() {
@@ -228,6 +269,9 @@ if [ -z "$DIRECT_PROBE_URL" ]; then
 	echo "--direct-probe-url cannot be empty" >&2
 	exit 1
 fi
+
+LOG_FILE=$(normalize_log_file)
+ensure_log_file_writable
 
 if [ "$WATCH_MODE" -eq 1 ]; then
 	log "[monitor] start watch mode: image=$IMAGE_ID interval=${INTERVAL}s max_failures=$MAX_FAILURES direct_probe_url=$DIRECT_PROBE_URL"

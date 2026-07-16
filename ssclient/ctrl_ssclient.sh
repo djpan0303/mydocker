@@ -7,9 +7,33 @@ ROOT_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 PROXY_ADDR="http://127.0.0.1:8118"
 MONITOR_SCRIPT="$SCRIPT_DIR/monitor_proxy.sh"
 MONITOR_PID_DIR="/tmp/mydocker_proxy_monitor"
+MONITOR_LOG_DIR="/var/log"
 
 function monitor_pid_file() {
 	echo "${MONITOR_PID_DIR}/ssclient.monitor.pid"
+}
+
+function monitor_log_file() {
+	echo "$MONITOR_LOG_DIR/monitory_proxy_$(date '+%F_%H-%M-%S').log"
+}
+
+function ensure_log_file_writable() {
+	log_file=$1
+
+	if touch "$log_file" 2>/dev/null; then
+		return 0
+	fi
+
+	echo "[monitor] no write permission for $log_file, trying sudo..."
+	if command -v sudo >/dev/null 2>&1; then
+		sudo touch "$log_file"
+		sudo chown "$(id -u):$(id -g)" "$log_file"
+		sudo chmod 664 "$log_file"
+		return 0
+	fi
+
+	echo "[monitor] cannot write $log_file and sudo is unavailable"
+	return 1
 }
 
 function start_monitor() {
@@ -30,11 +54,13 @@ function start_monitor() {
 	fi
 
 	echo "[monitor] starting watch process"
+	log_file=$(monitor_log_file)
+	ensure_log_file_writable "$log_file"
 	nohup "$MONITOR_SCRIPT" --watch --interval 60 --max-failures 3 \
-		--log-file /tmp/proxy-monitor.log >/tmp/proxy-monitor.stdout.log 2>&1 &
+		--log-file "$log_file" >>"$log_file" 2>&1 &
 	monitor_pid=$!
 	echo "$monitor_pid" >"$pid_file"
-	echo "[monitor] started, pid=$monitor_pid"
+	echo "[monitor] started, pid=$monitor_pid, log=$log_file"
 }
 
 function stop_monitor() {

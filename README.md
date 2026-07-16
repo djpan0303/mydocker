@@ -117,9 +117,10 @@ container_ctrl.sh --test
 ./ssclient/monitor_proxy.sh --direct-probe-url https://www.baidu.com
 ```
 
-如果想交给 cron 每分钟执行一次，可加日志：
+
+日志文件固定写到 `/var/log/`，文件名模板为：
 ```
-* * * * * /home/ubt/mydocker/ssclient/monitor_proxy.sh --max-failures 3 --log-file /var/log/proxy-monitor.log
+/var/log/monitory_proxy_YYYY-MM-DD_HH-mm-ss.log
 ```
 
 常用参数：
@@ -127,7 +128,7 @@ container_ctrl.sh --test
 - `--max-failures 3`：连续失败多少次后重启
 - `--interval 60`：`--watch` 模式下的轮询间隔
 - `--direct-probe-url <url>`：直连探测地址，默认 `https://www.baidu.com`
-- `--log-file <path>`：把日志追加写入文件
+- `--log-file <path>`：兼容参数；最终仍会归一化到 `/var/log/monitory_proxy_YYYY-MM-DD_HH-mm-ss.log`
 
 # frps (FRP Server)
 
