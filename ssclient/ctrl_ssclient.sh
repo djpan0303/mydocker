@@ -81,7 +81,17 @@ function stop_monitor() {
 function prepare_config() {
 	host_dir=$1
 	if [ ! -f "$host_dir/ssr.json" ]; then
-		cp -r "$SCRIPT_DIR/conf"/* "$host_dir"
+		echo "[ssclient] ssr.json not found in $host_dir, copying default"
+		cp "$SCRIPT_DIR/conf/ssr.json" "$host_dir/ssr.json"
+	fi
+
+	if [ ! -f "$host_dir/privoxy_config" ]; then
+		echo "[ssclient] privoxy_config not found in $host_dir, copying default"
+		if [ ! -f "$SCRIPT_DIR/conf/privoxy_config" ]; then
+			echo "[ssclient] source privoxy_config not found: $SCRIPT_DIR/conf/privoxy_config"
+			exit 1
+		fi
+		cp "$SCRIPT_DIR/conf/privoxy_config" "$host_dir/privoxy_config"
 	fi
 }
 
